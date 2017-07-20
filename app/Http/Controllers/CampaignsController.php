@@ -110,9 +110,9 @@ class CampaignsController extends Controller
                 'signups' => $signups,
                 'campaign' => $campaign,
                 'post_totals' => [
-                    'accepted_count' => $totals->accepted_count,
-                    'pending_count' => $totals->pending_count,
-                    'rejected_count' => $totals->rejected_count,
+                    'accepted_count' => isset($totals->accepted_count) ? $totals->accepted_count : 'n/a',
+                    'pending_count' => isset($totals->pending_count) ? $totals->pending_count : 'n/a',
+                    'rejected_count' => isset($totals->rejected_count) ? $totals->rejected_count : 'n/a',
                 ],
             ]);
     }

@@ -207,15 +207,20 @@ class CampaignService
     {
         $ids = $campaigns->pluck('id')->filter()->toArray();
 
-        $totals = DB::table('signups')
-                ->leftJoin('posts', 'signups.id', '=', 'posts.signup_id')
-                ->select('signups.campaign_id',
-                    DB::raw('SUM(case when posts.status = "accepted" then 1 else 0 end) as accepted_count'),
-                    DB::raw('SUM(case when posts.status = "pending" then 1 else 0 end) as pending_count'),
-                    DB::raw('SUM(case when posts.status = "rejected" then 1 else 0 end) as rejected_count'))
-                ->wherein('campaign_id', $ids)
-                ->groupBy('signups.campaign_id')
-                ->get();
+        // @TODO - Rethink this query. It is causing an almost 14s page load.
+        //
+        // $totals = DB::table('signups')
+        //         ->leftJoin('posts', 'signups.id', '=', 'posts.signup_id')
+        //         // ->select('signups.campaign_id',
+        //         //     DB::raw('SUM(case when posts.status = "accepted" then 1 else 0 end) as accepted_count'),
+        //         //     DB::raw('SUM(case when posts.status = "pending" then 1 else 0 end) as pending_count'),
+        //         //     DB::raw('SUM(case when posts.status = "rejected" then 1 else 0 end) as rejected_count'))
+        //         ->select('signups.campaign_id')
+        //         ->wherein('campaign_id', $ids)
+        //         ->groupBy('signups.campaign_id')
+        //         ->get();
+
+        $totals = DB::table('signups')->select('signups.campaign_id')->get();
 
         return $totals ? collect($totals)->keyBy('campaign_id') : collect();
     }
@@ -255,9 +260,9 @@ class CampaignService
                     $statusCounts = $campaignsWithCounts->get($campaign['id']);
 
                     if ($statusCounts) {
-                        $campaign['accepted_count'] = (int) $statusCounts->accepted_count;
-                        $campaign['pending_count'] = (int) $statusCounts->pending_count;
-                        $campaign['rejected_count'] = (int) $statusCounts->rejected_count;
+                        $campaign['accepted_count'] = isset($statusCounts->accepted_count) ? (int) $statusCounts->accepted_count : 'n/a';
+                        $campaign['pending_count'] = isset($statusCounts->pending_count) ? (int) $statusCounts->pending_count : 'n/a';
+                        $campaign['rejected_count'] = isset($statusCounts->rejected_count) ? (int) $statusCounts->rejected_count : 'n/a';
                     }
                 }
 
