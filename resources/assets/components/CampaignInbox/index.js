@@ -209,7 +209,7 @@ class CampaignInbox extends React.Component {
         <div className="container">
 
           { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
-          { this.state.displayGiveMeMore ? <button onClick={this.loadNextBatch}>Give me more</button> : null }
+          { this.state.displayGiveMeMore ? <button className="button" onClick={this.loadNextBatch}>Give me more</button> : null }
 
           <Confetti className="confetti" active={this.state.shootConfetti} config={confettiConfig} />
 
