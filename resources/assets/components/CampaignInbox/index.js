@@ -77,6 +77,7 @@ class CampaignInbox extends React.Component {
 
         // Update new state based on batch status
         this.checkBatch(newState);
+        
         return newState;
       });
     });
@@ -162,17 +163,21 @@ class CampaignInbox extends React.Component {
   }
 
   checkBatch(state) {
+    // Check if all posts in batch have been reviewed or deleted
     const reviewed = state.batch.every(key => {
       return !state.posts[key] || state.posts[key].status !== 'pending'
     });
     if (reviewed) {
+      // See if there are more posts to review in a later batch
       const pendingPostKeys = this.pendingPostKeys(state.posts);
       if (pendingPostKeys.length > 0) {
         state.displayGiveMeMore = true
       } else {
+        // If there are no more posts, display confetti without showing button
         state.shootConfetti = true
       }
     } else {
+      // Ensure the confetti status is reset
       state.shootConfetti = false
     }
   }
@@ -182,7 +187,9 @@ class CampaignInbox extends React.Component {
   }
 
   loadNextBatch() {
+    // Get all pending posts
     const pendingPostKeys = this.pendingPostKeys(this.state.posts)
+    // Use first 5 keys as current batch
     const nextBatch = pendingPostKeys.slice(0, 5)
     this.setState({
       shootConfetti: true,
@@ -209,6 +216,7 @@ class CampaignInbox extends React.Component {
         <div className="container">
 
           { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
+
           { this.state.displayGiveMeMore ? <button className="button" onClick={this.loadNextBatch}>Give me more</button> : null }
 
           <Confetti className="confetti" active={this.state.shootConfetti} config={confettiConfig} />
