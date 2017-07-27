@@ -30,6 +30,7 @@ class CampaignInbox extends React.Component {
     this.showHistory = this.showHistory.bind(this);
     this.hideHistory = this.hideHistory.bind(this);
     this.deletePost = this.deletePost.bind(this);
+    this.loadNextBatch = this.loadNextBatch.bind(this);
   }
 
   // Open the history modal of the given post
@@ -168,6 +169,16 @@ class CampaignInbox extends React.Component {
     return reject(Object.keys(posts), key => posts[key].status !== 'pending');
   }
 
+  loadNextBatch() {
+    // @todo Display confetti
+    const pendingPostKeys = this.pendingPostKeys(this.state.posts)
+    const nextBatch = pendingPostKeys.slice(0, 5)
+    this.setState({
+      batch: nextBatch,
+      displayGiveMeMore: false,
+    })
+  }
+
   render() {
     const batch = this.state.batch;
     const posts = this.state.posts;
@@ -186,7 +197,7 @@ class CampaignInbox extends React.Component {
         <div className="container">
 
           { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
-          { this.state.displayGiveMeMore ? <button>Give me more</button> : null }
+          { this.state.displayGiveMeMore ? <button onClick={this.loadNextBatch}>Give me more</button> : null }
 
           <ModalContainer>
             {this.state.displayHistoryModal ? <HistoryModal id={this.state.historyModalId} onUpdate={this.updateQuantity} onClose={e => this.hideHistory(e)} details={{post: posts[this.state.historyModalId], campaign: campaign, signups: this.state.signups }}/> : null}
