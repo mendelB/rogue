@@ -20,6 +20,7 @@ class CampaignInbox extends React.Component {
       batch: batch,
       displayHistoryModal: false,
       historyModalId: null,
+      displayGiveMeMore: false,
     };
 
     this.api = new RestApiClient;
@@ -63,6 +64,8 @@ class CampaignInbox extends React.Component {
         const newState = {...previousState};
         newState.posts[postId].status = fields.status;
 
+        // Update new state based on batch status
+        this.checkBatch(newState);
         return newState;
       });
     });
@@ -137,11 +140,32 @@ class CampaignInbox extends React.Component {
           // Remove the deleted post from the state
           delete(newState.posts[postId]);
 
+          // Update new state based on batch status
+          this.checkBatch(newState);
+
           // Return the new state
           return newState;
         });
       });
     }
+  }
+
+  checkBatch(state) {
+    const reviewed = state.batch.every(key => {
+      return !state.posts[key] || state.posts[key].status !== 'pending'
+    });
+    if (reviewed) {
+      const pendingPostKeys = this.pendingPostKeys(state.posts);
+      if (pendingPostKeys.length > 0) {
+        state.displayGiveMeMore = true
+      } else {
+        // @todo display confetti
+      }
+    }
+  }
+
+  pendingPostKeys(posts) {
+    return reject(Object.keys(posts), key => posts[key].status !== 'pending');
   }
 
   render() {
@@ -162,6 +186,7 @@ class CampaignInbox extends React.Component {
         <div className="container">
 
           { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
+          { this.state.displayGiveMeMore ? <button>Give me more</button> : null }
 
           <ModalContainer>
             {this.state.displayHistoryModal ? <HistoryModal id={this.state.historyModalId} onUpdate={this.updateQuantity} onClose={e => this.hideHistory(e)} details={{post: posts[this.state.historyModalId], campaign: campaign, signups: this.state.signups }}/> : null}
