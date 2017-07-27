@@ -12,10 +12,12 @@ class CampaignInbox extends React.Component {
     super(props);
 
     const posts = extractPostsFromSignups(props.signups);
+    const batch = Object.keys(posts).slice(0, 5);
 
     this.state = {
       signups: keyBy(props.signups, 'id'),
       posts: posts,
+      batch: batch,
       displayHistoryModal: false,
       historyModalId: null,
     };
@@ -54,7 +56,6 @@ class CampaignInbox extends React.Component {
   // Updates a post status.
   updatePost(postId, fields) {
     fields.post_id = postId;
-
     let request = this.api.put('reviews', fields);
 
     request.then((result) => {
@@ -144,6 +145,7 @@ class CampaignInbox extends React.Component {
   }
 
   render() {
+    const batch = this.state.batch;
     const posts = this.state.posts;
     const campaign = this.props.campaign;
 
@@ -159,7 +161,7 @@ class CampaignInbox extends React.Component {
       return (
         <div className="container">
 
-          { map(posts, (post, key) => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: post, campaign: campaign, signup: this.state.signups[post.signup_id]}} />) }
+          { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
 
           <ModalContainer>
             {this.state.displayHistoryModal ? <HistoryModal id={this.state.historyModalId} onUpdate={this.updateQuantity} onClose={e => this.hideHistory(e)} details={{post: posts[this.state.historyModalId], campaign: campaign, signups: this.state.signups }}/> : null}
