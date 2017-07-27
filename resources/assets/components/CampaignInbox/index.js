@@ -6,6 +6,15 @@ import { extractPostsFromSignups } from '../../helpers';
 import InboxItem from '../InboxItem';
 import ModalContainer from '../ModalContainer';
 import HistoryModal from '../HistoryModal';
+import Confetti from 'react-dom-confetti';
+
+const confettiConfig = {
+  angle: 90,
+  spread: 90,
+  startVelocity: 50,
+  elementCount: 70,
+  decay: 0.95
+};
 
 class CampaignInbox extends React.Component {
   constructor(props) {
@@ -21,6 +30,7 @@ class CampaignInbox extends React.Component {
       displayHistoryModal: false,
       historyModalId: null,
       displayGiveMeMore: false,
+      shootConfetti: false,
     };
 
     this.api = new RestApiClient;
@@ -160,8 +170,10 @@ class CampaignInbox extends React.Component {
       if (pendingPostKeys.length > 0) {
         state.displayGiveMeMore = true
       } else {
-        // @todo display confetti
+        state.shootConfetti = true
       }
+    } else {
+      state.shootConfetti = false
     }
   }
 
@@ -170,10 +182,10 @@ class CampaignInbox extends React.Component {
   }
 
   loadNextBatch() {
-    // @todo Display confetti
     const pendingPostKeys = this.pendingPostKeys(this.state.posts)
     const nextBatch = pendingPostKeys.slice(0, 5)
     this.setState({
+      shootConfetti: true,
       batch: nextBatch,
       displayGiveMeMore: false,
     })
@@ -192,16 +204,19 @@ class CampaignInbox extends React.Component {
       'https://media.giphy.com/media/lYHbL5QY52Kcw/giphy.gif',
     ];
 
-    if (posts.length !== 0) {
+    if (batch.length !== 0) {
       return (
         <div className="container">
 
           { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
           { this.state.displayGiveMeMore ? <button onClick={this.loadNextBatch}>Give me more</button> : null }
 
+          <Confetti className="confetti" active={this.state.shootConfetti} config={confettiConfig} />
+
           <ModalContainer>
             {this.state.displayHistoryModal ? <HistoryModal id={this.state.historyModalId} onUpdate={this.updateQuantity} onClose={e => this.hideHistory(e)} details={{post: posts[this.state.historyModalId], campaign: campaign, signups: this.state.signups }}/> : null}
           </ModalContainer>
+
         </div>
       )
     } else {
