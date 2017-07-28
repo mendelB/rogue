@@ -11,8 +11,8 @@ import Confetti from 'react-dom-confetti';
 const confettiConfig = {
   angle: 90,
   spread: 90,
-  startVelocity: 50,
-  elementCount: 70,
+  startVelocity: 60,
+  elementCount: 90,
   decay: 0.95
 };
 
@@ -77,7 +77,7 @@ class CampaignInbox extends React.Component {
 
         // Update new state based on batch status
         this.checkBatch(newState);
-        
+
         return newState;
       });
     });
