@@ -6,18 +6,31 @@ import { extractPostsFromSignups } from '../../helpers';
 import InboxItem from '../InboxItem';
 import ModalContainer from '../ModalContainer';
 import HistoryModal from '../HistoryModal';
+import Confetti from 'react-dom-confetti';
+
+const confettiConfig = {
+  angle: 90,
+  spread: 90,
+  startVelocity: 60,
+  elementCount: 90,
+  decay: 0.95
+};
 
 class CampaignInbox extends React.Component {
   constructor(props) {
     super(props);
 
     const posts = extractPostsFromSignups(props.signups);
+    const batch = Object.keys(posts).slice(0, 5);
 
     this.state = {
       signups: keyBy(props.signups, 'id'),
       posts: posts,
+      batch: batch,
       displayHistoryModal: false,
       historyModalId: null,
+      displayGiveMeMore: false,
+      shootConfetti: false,
     };
 
     this.api = new RestApiClient;
@@ -27,6 +40,7 @@ class CampaignInbox extends React.Component {
     this.showHistory = this.showHistory.bind(this);
     this.hideHistory = this.hideHistory.bind(this);
     this.deletePost = this.deletePost.bind(this);
+    this.loadNextBatch = this.loadNextBatch.bind(this);
   }
 
   // Open the history modal of the given post
@@ -54,13 +68,15 @@ class CampaignInbox extends React.Component {
   // Updates a post status.
   updatePost(postId, fields) {
     fields.post_id = postId;
-
     let request = this.api.put('reviews', fields);
 
     request.then((result) => {
       this.setState((previousState) => {
         const newState = {...previousState};
         newState.posts[postId].status = fields.status;
+
+        // Update new state based on batch status
+        this.checkBatch(newState);
 
         return newState;
       });
@@ -136,6 +152,13 @@ class CampaignInbox extends React.Component {
           // Remove the deleted post from the state
           delete(newState.posts[postId]);
 
+          // Remove the deleted post id/key from batch
+          const keyIndex = newState.batch.indexOf(String(postId));
+          newState.batch.splice(keyIndex, 1);
+
+          // Update new state based on batch status
+          this.checkBatch(newState);
+
           // Return the new state
           return newState;
         });
@@ -143,7 +166,44 @@ class CampaignInbox extends React.Component {
     }
   }
 
+  checkBatch(state) {
+    // Check if all posts in batch have been reviewed
+    const reviewed = state.batch.every(key => {
+      return state.posts[key].status !== 'pending'
+    });
+    if (reviewed) {
+      // See if there are more posts to review in a later batch
+      const pendingPostKeys = this.pendingPostKeys(state.posts);
+      if (pendingPostKeys.length > 0) {
+        state.displayGiveMeMore = true
+      } else {
+        // If there are no more posts, display confetti without showing button
+        state.shootConfetti = true
+      }
+    } else {
+      // Ensure the confetti status is reset
+      state.shootConfetti = false
+    }
+  }
+
+  pendingPostKeys(posts) {
+    return reject(Object.keys(posts), key => posts[key].status !== 'pending');
+  }
+
+  loadNextBatch() {
+    // Get all pending posts
+    const pendingPostKeys = this.pendingPostKeys(this.state.posts)
+    // Use first 5 keys as current batch
+    const nextBatch = pendingPostKeys.slice(0, 5)
+    this.setState({
+      shootConfetti: true,
+      batch: nextBatch,
+      displayGiveMeMore: false,
+    })
+  }
+
   render() {
+    const batch = this.state.batch;
     const posts = this.state.posts;
     const campaign = this.props.campaign;
 
@@ -155,15 +215,20 @@ class CampaignInbox extends React.Component {
       'https://media.giphy.com/media/lYHbL5QY52Kcw/giphy.gif',
     ];
 
-    if (posts.length !== 0) {
+    if (batch.length !== 0) {
       return (
         <div className="container">
 
-          { map(posts, (post, key) => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: post, campaign: campaign, signup: this.state.signups[post.signup_id]}} />) }
+          { batch.map(key => <InboxItem allowReview={true} onUpdate={this.updatePost} onTag={this.updateTag} showHistory={this.showHistory} deletePost={this.deletePost} key={key} details={{post: posts[key], campaign: campaign, signup: this.state.signups[posts[key].signup_id]}} />) }
+
+          { this.state.displayGiveMeMore ? <button className="button" onClick={this.loadNextBatch}>Give me more</button> : null }
+
+          <Confetti className="confetti" active={this.state.shootConfetti} config={confettiConfig} />
 
           <ModalContainer>
             {this.state.displayHistoryModal ? <HistoryModal id={this.state.historyModalId} onUpdate={this.updateQuantity} onClose={e => this.hideHistory(e)} details={{post: posts[this.state.historyModalId], campaign: campaign, signups: this.state.signups }}/> : null}
           </ModalContainer>
+
         </div>
       )
     } else {
