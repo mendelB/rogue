@@ -152,6 +152,10 @@ class CampaignInbox extends React.Component {
           // Remove the deleted post from the state
           delete(newState.posts[postId]);
 
+          // Remove the deleted post id/key from batch
+          const keyIndex = newState.batch.indexOf(String(postId));
+          newState.batch.splice(keyIndex, 1);
+
           // Update new state based on batch status
           this.checkBatch(newState);
 
@@ -163,9 +167,9 @@ class CampaignInbox extends React.Component {
   }
 
   checkBatch(state) {
-    // Check if all posts in batch have been reviewed or deleted
+    // Check if all posts in batch have been reviewed
     const reviewed = state.batch.every(key => {
-      return !state.posts[key] || state.posts[key].status !== 'pending'
+      return state.posts[key].status !== 'pending'
     });
     if (reviewed) {
       // See if there are more posts to review in a later batch
